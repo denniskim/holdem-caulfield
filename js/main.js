@@ -113,6 +113,10 @@ var DeckBuilder = {
 
 	deck: [],
 
+	// TODO move to config
+	riffleChunkMax: 3,
+	hinduChunkMax: 9,
+
 	create: function () {
 		this._construct();
 		return this;
@@ -137,9 +141,99 @@ var DeckBuilder = {
 			throw "Deck not empty";
 		}
 
-		for (i = 0, iLen = this.deck.length; i < iLen; i += 1) {
-			console.log(i + ': ' + this.deck[i].getRank() + this.deck[i].getSuitSymbol());
+		this._logDeck();
+	},
+
+	/**
+	 * Do a riffle shuffle (split deck and interleave packets)
+	 *
+	 */
+	riffleShuffle: function () {
+
+		var packet0 = [],
+			packet1 = [],
+			chunk0 = [],
+			chunk1 = [],
+			deckIndices = [],
+			tmpDeck = [],
+			i, iLen;
+
+		// split deck in half
+		for (i = 0, iLen = 26; i < iLen; i += 1) {
+			packet0.push(i);
+			packet1.push(i + 26);
 		}
+
+		// riffle the indices
+		while (packet0.length > 0 && packet1.length > 0) {
+
+			chunk0 = packet0.splice(0, this._getChunkSize(this.riffleChunkMax));
+			chunk1 = packet1.splice(0, this._getChunkSize(this.riffleChunkMax))
+
+			deckIndices = deckIndices.concat(chunk0, chunk1);
+		}
+
+		// append any remaining cards in the stack
+		deckIndices = deckIndices.concat(packet0, packet1);
+
+		// rearrange deck acc'd to deckIndices
+		for (i = 0, iLen = deckIndices.length; i < iLen; i += 1) {
+			tmpDeck.push(this.deck[deckIndices[i]]);
+		}
+
+		this.deck = tmpDeck;
+		this._logDeck();
+	},
+
+	/**
+	 * Perform a Hindu Shuffle (n cards off the top and stacked)
+	 */
+	hinduShuffle: function () {
+
+		var deckIndices = [],
+			packet = [],
+			tmpDeck = [],
+			i, iLen;
+
+		for (i = 0, iLen = 52; i < iLen; i += 1) {
+			packet.push(i);
+		}
+
+		while (packet.length > 0) {
+			deckIndices = deckIndices.concat(packet.splice(0, this._getChunkSize(this.hinduChunkMax)));
+		}
+
+		// rearrange deck acc'd to deckIndices
+		for (i = 0, iLen = deckIndices.length; i < iLen; i += 1) {
+			tmpDeck.push(this.deck[deckIndices[i]]);
+		}
+
+		this.deck = tmpDeck;
+		this._logDeck();
+
+		console.log('length: ', deckIndices.length);
+	},
+
+	/**
+	 * returns a random int between 1 and chunkSize
+	 *
+	 * @param chunkMax (int) max chunk size
+	 * @returns {number}
+	 * @private
+	 */
+	_getChunkSize: function (chunkMax) {
+		return Math.floor(Math.random() * chunkMax + 1);
+	},
+
+	_logDeck: function () {
+		var conString = '',
+			i, iLen;
+
+		for (i = 0, iLen = this.deck.length; i < iLen; i += 1) {
+			conString += '(' + this.deck[i].getRank() + this.deck[i].getSuitSymbol() + ')';
+		}
+
+		console.log(conString);
 	}
 
 };
@@ -154,5 +248,16 @@ var Caulfield = {
 };
 
 (function () {
-	var deckBuilder = DeckBuilder.create();
-})()
+	window.deckBuilder = DeckBuilder.create();
+
+	console.log('created deck');
+
+	deckBuilder.riffleShuffle();
+	deckBuilder.riffleShuffle();
+	deckBuilder.riffleShuffle();
+	deckBuilder.hinduShuffle();
+	deckBuilder.riffleShuffle();
+	deckBuilder.riffleShuffle();
+	deckBuilder.riffleShuffle();
+	deckBuilder.riffleShuffle();
+})();
